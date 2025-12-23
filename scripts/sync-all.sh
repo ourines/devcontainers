@@ -178,6 +178,71 @@ claude_pull() {
   log_info "Claude 配置拉取完成"
 }
 
+# 个人 Profile 同步
+profile_push() {
+  log_info "同步个人 Profile 到 R2..."
+
+  local profile_dir="/tmp/profile-backup"
+  mkdir -p "$profile_dir"
+
+  # 备份 shell 配置
+  [ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$profile_dir/"
+  [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$profile_dir/"
+  [ -f "$HOME/.gitconfig" ] && cp "$HOME/.gitconfig" "$profile_dir/"
+  [ -f "$HOME/.vimrc" ] && cp "$HOME/.vimrc" "$profile_dir/"
+
+  # 备份 devcontainers 个人脚本
+  if [ -f "$HOME/.devcontainers/scripts/personal-setup.sh" ]; then
+    cp "$HOME/.devcontainers/scripts/personal-setup.sh" "$profile_dir/"
+  fi
+
+  # 备份 SSH 公钥（不备份私钥）
+  if [ -d "$HOME/.ssh" ]; then
+    mkdir -p "$profile_dir/.ssh"
+    cp "$HOME/.ssh/"*.pub "$profile_dir/.ssh/" 2>/dev/null || true
+    cp "$HOME/.ssh/config" "$profile_dir/.ssh/" 2>/dev/null || true
+  fi
+
+  rclone sync "$profile_dir/" "r2:${BUCKET}/profile/" --progress
+
+  log_info "Profile 同步完成"
+  rm -rf "$profile_dir"
+}
+
+profile_pull() {
+  log_info "从 R2 拉取个人 Profile..."
+
+  local profile_dir="/tmp/profile-restore"
+  mkdir -p "$profile_dir"
+
+  rclone copy "r2:${BUCKET}/profile/" "$profile_dir/" --progress 2>/dev/null || {
+    log_warn "R2 上没有 Profile 备份"
+    return 0
+  }
+
+  # 恢复配置文件
+  [ -f "$profile_dir/.zshrc" ] && cp "$profile_dir/.zshrc" "$HOME/"
+  [ -f "$profile_dir/.bashrc" ] && cp "$profile_dir/.bashrc" "$HOME/"
+  [ -f "$profile_dir/.gitconfig" ] && cp "$profile_dir/.gitconfig" "$HOME/"
+  [ -f "$profile_dir/.vimrc" ] && cp "$profile_dir/.vimrc" "$HOME/"
+
+  # 恢复个人脚本
+  if [ -f "$profile_dir/personal-setup.sh" ]; then
+    mkdir -p "$HOME/.devcontainers/scripts"
+    cp "$profile_dir/personal-setup.sh" "$HOME/.devcontainers/scripts/"
+  fi
+
+  # 恢复 SSH 配置
+  if [ -d "$profile_dir/.ssh" ]; then
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    cp "$profile_dir/.ssh/"* "$HOME/.ssh/" 2>/dev/null || true
+  fi
+
+  log_info "Profile 拉取完成"
+  rm -rf "$profile_dir"
+}
+
 # 列出备份
 list_backups() {
   log_info "R2 上的备份:"
@@ -187,6 +252,9 @@ list_backups() {
   echo ""
   echo "⚙️ Claude 配置:"
   rclone ls "r2:${BUCKET}/claude-config/" 2>/dev/null | head -10 || echo "  (空)"
+  echo ""
+  echo "👤 个人 Profile:"
+  rclone ls "r2:${BUCKET}/profile/" 2>/dev/null || echo "  (空)"
 }
 
 # 主逻辑
@@ -196,20 +264,23 @@ main() {
 
   local sync_db=""
   local sync_claude=""
+  local sync_profile=""
 
   # 解析选项
   for arg in "$@"; do
     case $arg in
       --db) sync_db="true" ;;
       --claude) sync_claude="true" ;;
-      --all) sync_db="true"; sync_claude="true" ;;
+      --profile) sync_profile="true" ;;
+      --all) sync_db="true"; sync_claude="true"; sync_profile="true" ;;
     esac
   done
 
   # 默认同步所有
-  if [ -z "$sync_db" ] && [ -z "$sync_claude" ]; then
+  if [ -z "$sync_db" ] && [ -z "$sync_claude" ] && [ -z "$sync_profile" ]; then
     sync_db="true"
     sync_claude="true"
+    sync_profile="true"
   fi
 
   case $action in
@@ -218,10 +289,12 @@ main() {
       setup_rclone
       [ "$sync_db" = "true" ] && db_push
       [ "$sync_claude" = "true" ] && claude_push
+      [ "$sync_profile" = "true" ] && profile_push
       ;;
     pull)
       check_r2_env
       setup_rclone
+      [ "$sync_profile" = "true" ] && profile_pull
       [ "$sync_claude" = "true" ] && claude_pull
       [ "$sync_db" = "true" ] && db_pull
       ;;
@@ -231,7 +304,7 @@ main() {
       list_backups
       ;;
     *)
-      echo "用法: $0 [push|pull|list] [--db] [--claude] [--all]"
+      echo "用法: $0 [push|pull|list] [--db] [--claude] [--profile] [--all]"
       echo ""
       echo "命令:"
       echo "  push    上传到 R2"
@@ -239,14 +312,15 @@ main() {
       echo "  list    列出 R2 上的备份"
       echo ""
       echo "选项:"
-      echo "  --db      只同步数据库"
-      echo "  --claude  只同步 Claude 配置"
-      echo "  --all     同步所有（默认）"
+      echo "  --db       只同步数据库"
+      echo "  --claude   只同步 Claude 配置"
+      echo "  --profile  只同步个人 Profile (.zshrc, .gitconfig, SSH)"
+      echo "  --all      同步所有（默认）"
       echo ""
       echo "示例:"
-      echo "  $0 push              # 备份所有到 R2"
-      echo "  $0 pull --db         # 只恢复数据库"
-      echo "  $0 push --claude     # 只备份 Claude 配置"
+      echo "  $0 push               # 备份所有到 R2"
+      echo "  $0 pull --db          # 只恢复数据库"
+      echo "  $0 push --profile     # 只备份个人配置"
       ;;
   esac
 }
