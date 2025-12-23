@@ -18,7 +18,8 @@
         "dsznajder.es7-react-js-snippets",
         "burkeholland.simple-react-snippets",
         "christian-kohler.path-intellisense",
-        "ms-playwright.playwright"
+        "ms-playwright.playwright",
+        "cweijan.vscode-postgresql-client2"
       ],
       "settings": {
         "editor.formatOnSave": true,
@@ -30,5 +31,5 @@
     }
   },
 
-  "postCreateCommand": "corepack enable && corepack prepare pnpm@latest --activate && [ -f pnpm-lock.yaml ] && pnpm install || true"
+  "postCreateCommand": "bash .devcontainer/scripts/post-create.sh"
 }

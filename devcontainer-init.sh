@@ -11,14 +11,14 @@
 #   - Cargo.toml → rust
 #
 # 选项:
-#   with-db    添加 PostgreSQL
+#   with-db      添加 PostgreSQL
 #   --no-commit  不提交到 git
 #
 # 示例:
 #   devcontainer-init.sh              # 自动检测语言
 #   devcontainer-init.sh node         # 强制 Node.js
+#   devcontainer-init.sh with-db      # 自动检测 + PostgreSQL
 #   devcontainer-init.sh node with-db # Node.js + PostgreSQL
-#   devcontainer-init.sh --no-commit  # 不自动 git add
 
 set -e
 
@@ -89,8 +89,25 @@ fi
 # 创建目录
 mkdir -p .devcontainer/scripts
 
-# 复制同步脚本
+# 复制脚本
 cp "$SCRIPTS_DIR/sync-config.sh" .devcontainer/scripts/
+
+# 复制语言专属的 post-create 脚本
+if [ -f "$SCRIPTS_DIR/post-create-${LANG}.sh" ]; then
+  cp "$SCRIPTS_DIR/post-create-${LANG}.sh" .devcontainer/scripts/post-create.sh
+else
+  # 创建通用的 post-create 脚本
+  cat > .devcontainer/scripts/post-create.sh << 'SCRIPT'
+#!/bin/bash
+set -e
+echo "🚀 Post-create setup..."
+npm install -g @anthropic-ai/claude-code
+git config --global init.defaultBranch main
+echo "alias cc='claude'" >> ~/.zshrc
+echo "✅ Setup complete!"
+SCRIPT
+fi
+
 chmod +x .devcontainer/scripts/*.sh
 
 # 深度合并 base + 语言模板
@@ -164,9 +181,10 @@ networks:
 EOF
 
   mkdir -p .devcontainer/init-db
+  touch .devcontainer/init-db/.gitkeep
 fi
 
-# 创建 .gitignore for devcontainer
+# 创建 .gitignore
 cat > .devcontainer/.gitignore << 'EOF'
 # 本地数据库备份
 init-db/*.sql
@@ -178,28 +196,27 @@ init-db/*.dump
 *.log
 EOF
 
-# 创建占位文件
-if [ "$WITH_DB" = "with-db" ]; then
-  touch .devcontainer/init-db/.gitkeep
-fi
-
 echo ""
 echo "✅ devcontainer 配置已生成"
 echo ""
 echo "📁 生成的文件:"
-find .devcontainer -type f | head -10
+find .devcontainer -type f | sort
 echo ""
 
-# 自动 git add（如果在 git 仓库中）
+# 自动 git add
 if [ -z "$NO_COMMIT" ] && [ -d ".git" ]; then
   echo "📦 添加到 git..."
   git add .devcontainer/
   echo "   已添加 .devcontainer/ 到暂存区"
-  echo "   运行 'git commit -m \"Add devcontainer config\"' 提交"
 fi
 
 echo ""
 echo "🎯 下一步:"
-echo "   1. 提交配置: git commit -m 'Add devcontainer config'"
-echo "   2. VS Code 打开: code ."
-echo "   3. Cmd+Shift+P → 'Reopen in Container'"
+echo "   1. 提交: git commit -m 'Add devcontainer config'"
+echo "   2. VS Code: code . → Reopen in Container"
+echo ""
+echo "📋 容器启动后自动执行:"
+echo "   • 安装依赖 (pnpm/npm/yarn)"
+echo "   • 安装 Claude Code CLI"
+[ "$LANG" = "node" ] && echo "   • Playwright 浏览器 (如果项目使用)"
+[ "$WITH_DB" = "with-db" ] && echo "   • 数据库迁移 (Drizzle/Prisma)"

@@ -29,23 +29,21 @@
   },
 
   "mounts": [
-    "source=devcontainer-claude-config,target=/home/vscode/.claude,type=volume"
+    "source=devcontainer-claude-config,target=/home/node/.claude,type=volume"
   ],
 
   "remoteEnv": {
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
-    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
     "R2_ENDPOINT": "${localEnv:R2_ENDPOINT}",
     "R2_ACCESS_KEY_ID": "${localEnv:R2_ACCESS_KEY_ID}",
     "R2_SECRET_ACCESS_KEY": "${localEnv:R2_SECRET_ACCESS_KEY}",
     "R2_BUCKET": "${localEnv:R2_BUCKET:-devcontainer-sync}"
   },
 
-  "postCreateCommand": "bash -c '$(curl -fsSL https://raw.githubusercontent.com/anthropics/claude-code/main/install.sh)' && /home/vscode/.devcontainer/scripts/sync-config.sh pull",
-
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 
   "shutdownAction": "stopContainer",
 
-  "onCreateCommand": "/home/vscode/.devcontainer/scripts/sync-config.sh pull || true"
+  "remoteUser": "node"
 }
