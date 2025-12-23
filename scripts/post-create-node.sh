@@ -4,11 +4,26 @@ set -e
 
 echo "🚀 Post-create setup starting..."
 
+# 0. 修复目录权限（从 Mac 挂载时 UID 不匹配）
+echo "🔧 Fixing directory permissions..."
+chown -R $(whoami):$(whoami) "$HOME/.claude" 2>/dev/null || true
+chown -R $(whoami):$(whoami) /workspace 2>/dev/null || true
+
+# 0.1 Git safe directory（避免 ownership 警告）
+git config --global --add safe.directory /workspace 2>/dev/null || true
+
+# 0.2 安装 btop（系统监控）
+echo "📊 Installing btop..."
+apt-get update -qq && apt-get install -y -qq btop 2>/dev/null || \
+  echo "   ⚠️ btop install failed, skip"
+
 # 1. 检测包管理器并安装依赖
 echo "📦 Setting up package manager..."
 if [ -f "pnpm-lock.yaml" ]; then
   corepack enable
   corepack prepare pnpm@latest --activate
+  # 配置 pnpm store 到全局目录（避免污染项目目录）
+  pnpm config set store-dir ~/.local/share/pnpm/store
   echo "   Using pnpm"
   PKG_MGR="pnpm"
   pnpm install
@@ -25,14 +40,16 @@ elif [ -f "package.json" ]; then
   # 默认用 pnpm
   corepack enable
   corepack prepare pnpm@latest --activate
+  pnpm config set store-dir ~/.local/share/pnpm/store
   echo "   Using pnpm (default)"
   PKG_MGR="pnpm"
   pnpm install
 fi
 
-# 2. Install Claude Code CLI
-echo "🤖 Installing Claude Code CLI..."
-npm install -g @anthropic-ai/claude-code
+# 2. Install CLI tools
+echo "🤖 Installing CLI tools..."
+npm install -g @anthropic-ai/claude-code @openai/codex 2>/dev/null || \
+  echo "   ⚠️ CLI tools install failed, run manually: npm install -g @anthropic-ai/claude-code @openai/codex"
 
 # 3. Playwright - 仅当项目使用时安装
 if grep -q '"playwright"' package.json 2>/dev/null || \
@@ -119,6 +136,16 @@ alias db:studio="$PKG_MGR prisma studio"
 EOF
 fi
 
+# 数据库同步 aliases
+cat >> ~/.zshrc << 'EOF'
+
+# Database sync (R2)
+alias db:backup=".devcontainer/scripts/db-sync.sh backup"
+alias db:restore=".devcontainer/scripts/db-sync.sh restore"
+alias db:pull=".devcontainer/scripts/db-sync.sh pull"
+alias db:sync=".devcontainer/scripts/db-sync.sh push"
+EOF
+
 cat >> ~/.zshrc << 'EOF'
 
 # Git aliases
@@ -141,3 +168,4 @@ grep -q '"playwright"' package.json 2>/dev/null && echo "   • Playwright: inst
 [ -f "prisma/schema.prisma" ] && echo "   • Prisma: configured"
 echo ""
 echo "🚀 Run 'dev' to start development server"
+echo "📊 Run 'btop' for system monitoring"
