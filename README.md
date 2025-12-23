@@ -5,11 +5,11 @@
 ## 一键安装
 
 ```bash
-# 从 GitHub 安装（需要先创建仓库）
-curl -fsSL https://raw.githubusercontent.com/liubiao/devcontainers/main/install.sh | bash
+# 从 GitHub 安装
+curl -fsSL https://raw.githubusercontent.com/ourines/devcontainers/main/install.sh | bash
 
 # 或者从本地安装
-git clone git@github.com:liubiao/devcontainers.git ~/.devcontainers
+git clone git@github.com:ourines/devcontainers.git ~/.devcontainers
 chmod +x ~/.devcontainers/*.sh ~/.devcontainers/scripts/*.sh
 ```
 

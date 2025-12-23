@@ -4,7 +4,7 @@
 
 set -e
 
-REPO_URL="${DEVCONTAINERS_REPO:-https://github.com/liubiao/devcontainers.git}"
+REPO_URL="${DEVCONTAINERS_REPO:-https://github.com/ourines/devcontainers.git}"
 INSTALL_DIR="${HOME}/.devcontainers"
 
 echo "🚀 安装 devcontainers 配置..."
