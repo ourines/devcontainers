@@ -9,6 +9,46 @@ INSTALL_DIR="${HOME}/.devcontainers"
 
 echo "🚀 安装 devcontainers 配置..."
 
+# 检测系统类型
+detect_os() {
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    echo "$ID"
+  else
+    echo "unknown"
+  fi
+}
+
+# 安装 tmux
+install_tmux() {
+  if command -v tmux &> /dev/null; then
+    echo "✅ tmux 已安装: $(tmux -V)"
+    return 0
+  fi
+
+  echo "📦 安装 tmux..."
+  OS=$(detect_os)
+
+  case "$OS" in
+    ubuntu|debian)
+      sudo apt-get update
+      sudo apt-get install -y tmux
+      ;;
+    fedora|centos|rhel)
+      sudo dnf install -y tmux
+      ;;
+    darwin)
+      brew install tmux
+      ;;
+    *)
+      echo "⚠️  请手动安装 tmux"
+      return 1
+      ;;
+  esac
+
+  echo "✅ tmux 安装完成"
+}
+
 # 检测并安装 Docker
 install_docker() {
   if command -v docker &> /dev/null; then
@@ -17,15 +57,7 @@ install_docker() {
   fi
 
   echo "📦 检测到未安装 Docker，正在安装..."
-
-  # 检测系统类型
-  if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS=$ID
-  else
-    echo "❌ 无法检测操作系统"
-    return 1
-  fi
+  OS=$(detect_os)
 
   case "$OS" in
     ubuntu|debian)
@@ -71,7 +103,8 @@ install_docker() {
   echo "⚠️  请重新登录以使 docker 组权限生效"
 }
 
-# 安装 Docker
+# 安装依赖
+install_tmux
 install_docker
 
 # 如果目录存在，更新；否则克隆
