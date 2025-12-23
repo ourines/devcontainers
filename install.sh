@@ -9,6 +9,11 @@ INSTALL_DIR="${HOME}/.devcontainers"
 
 echo "🚀 安装 devcontainers 配置..."
 
+# 检测是否在容器内
+is_container() {
+  [ -f /.dockerenv ] || grep -q 'docker\|lxc\|containerd' /proc/1/cgroup 2>/dev/null
+}
+
 # 检测系统类型
 detect_os() {
   if [ -f /etc/os-release ]; then
@@ -103,9 +108,14 @@ install_docker() {
   echo "⚠️  请重新登录以使 docker 组权限生效"
 }
 
-# 安装依赖
+# 安装依赖（跳过容器内的 Docker 安装）
 install_tmux
-install_docker
+
+if is_container; then
+  echo "📦 检测到容器环境，跳过 Docker 安装"
+else
+  install_docker
+fi
 
 # 如果目录存在，更新；否则克隆
 if [ -d "$INSTALL_DIR/.git" ]; then
