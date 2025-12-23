@@ -1,0 +1,28 @@
+{
+  "name": "Go Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/go:1.22",
+
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.22"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "zxh404.vscode-proto3",
+        "tamasfe.even-better-toml"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "go.useLanguageServer": true,
+        "go.lintTool": "golangci-lint",
+        "[go]": { "editor.defaultFormatter": "golang.go" }
+      }
+    }
+  },
+
+  "postCreateCommand": "go mod download || true"
+}
