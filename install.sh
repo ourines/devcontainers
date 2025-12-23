@@ -162,13 +162,20 @@ setup_env() {
   echo ""
 
   # Claude/Anthropic
-  read -p "ANTHROPIC_API_KEY (Claude): " ANTHROPIC_KEY
+  echo "── Claude Code ──"
+  read -p "ANTHROPIC_API_KEY: " ANTHROPIC_KEY
+  read -p "ANTHROPIC_BASE_URL (直接回车使用官方): " ANTHROPIC_BASE
 
-  # OpenAI
-  read -p "OPENAI_API_KEY (Codex): " OPENAI_KEY
+  # OpenAI/Codex
+  echo ""
+  echo "── OpenAI Codex ──"
+  read -p "OPENAI_API_KEY: " OPENAI_KEY
+  read -p "OPENAI_BASE_URL (直接回车使用官方): " OPENAI_BASE
 
   # R2/S3
-  read -p "R2_ENDPOINT (如 https://xxx.r2.cloudflarestorage.com): " R2_ENDPOINT
+  echo ""
+  echo "── R2/S3 存储 ──"
+  read -p "R2_ENDPOINT: " R2_ENDPOINT
   read -p "R2_ACCESS_KEY_ID: " R2_ACCESS_KEY
   read -p "R2_SECRET_ACCESS_KEY: " R2_SECRET_KEY
 
@@ -177,7 +184,9 @@ setup_env() {
   echo "# API Keys (added by devcontainers)" >> "$SHELL_RC"
 
   [ -n "$ANTHROPIC_KEY" ] && echo "export ANTHROPIC_API_KEY='$ANTHROPIC_KEY'" >> "$SHELL_RC"
+  [ -n "$ANTHROPIC_BASE" ] && echo "export ANTHROPIC_BASE_URL='$ANTHROPIC_BASE'" >> "$SHELL_RC"
   [ -n "$OPENAI_KEY" ] && echo "export OPENAI_API_KEY='$OPENAI_KEY'" >> "$SHELL_RC"
+  [ -n "$OPENAI_BASE" ] && echo "export OPENAI_BASE_URL='$OPENAI_BASE'" >> "$SHELL_RC"
   [ -n "$R2_ENDPOINT" ] && echo "export R2_ENDPOINT='$R2_ENDPOINT'" >> "$SHELL_RC"
   [ -n "$R2_ACCESS_KEY" ] && echo "export R2_ACCESS_KEY_ID='$R2_ACCESS_KEY'" >> "$SHELL_RC"
   [ -n "$R2_SECRET_KEY" ] && echo "export R2_SECRET_ACCESS_KEY='$R2_SECRET_KEY'" >> "$SHELL_RC"
