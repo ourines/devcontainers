@@ -138,6 +138,59 @@ if [ -n "$SHELL_RC" ]; then
   fi
 fi
 
+# 配置环境变量
+setup_env() {
+  echo ""
+  echo "🔧 配置环境变量..."
+
+  # 检查是否已配置
+  local need_config=false
+  grep -q "ANTHROPIC_API_KEY" "$SHELL_RC" 2>/dev/null || need_config=true
+
+  if [ "$need_config" = false ]; then
+    echo "✅ 环境变量已配置"
+    read -p "是否重新配置? [y/N] " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      return 0
+    fi
+  fi
+
+  echo ""
+  echo "请输入以下环境变量（直接回车跳过）："
+  echo ""
+
+  # Claude/Anthropic
+  read -p "ANTHROPIC_API_KEY (Claude): " ANTHROPIC_KEY
+
+  # OpenAI
+  read -p "OPENAI_API_KEY (Codex): " OPENAI_KEY
+
+  # R2/S3
+  read -p "R2_ENDPOINT (如 https://xxx.r2.cloudflarestorage.com): " R2_ENDPOINT
+  read -p "R2_ACCESS_KEY_ID: " R2_ACCESS_KEY
+  read -p "R2_SECRET_ACCESS_KEY: " R2_SECRET_KEY
+
+  # 写入配置
+  echo "" >> "$SHELL_RC"
+  echo "# API Keys (added by devcontainers)" >> "$SHELL_RC"
+
+  [ -n "$ANTHROPIC_KEY" ] && echo "export ANTHROPIC_API_KEY='$ANTHROPIC_KEY'" >> "$SHELL_RC"
+  [ -n "$OPENAI_KEY" ] && echo "export OPENAI_API_KEY='$OPENAI_KEY'" >> "$SHELL_RC"
+  [ -n "$R2_ENDPOINT" ] && echo "export R2_ENDPOINT='$R2_ENDPOINT'" >> "$SHELL_RC"
+  [ -n "$R2_ACCESS_KEY" ] && echo "export R2_ACCESS_KEY_ID='$R2_ACCESS_KEY'" >> "$SHELL_RC"
+  [ -n "$R2_SECRET_KEY" ] && echo "export R2_SECRET_ACCESS_KEY='$R2_SECRET_KEY'" >> "$SHELL_RC"
+
+  echo "✅ 环境变量已保存到 $SHELL_RC"
+}
+
+# 询问是否配置环境变量
+read -p "是否配置 API Keys? [Y/n] " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+  setup_env
+fi
+
 echo ""
 echo "✅ 安装完成！"
 echo ""
