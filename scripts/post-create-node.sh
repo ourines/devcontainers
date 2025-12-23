@@ -17,6 +17,14 @@ echo "📊 Installing btop..."
 apt-get update -qq && apt-get install -y -qq btop 2>/dev/null || \
   echo "   ⚠️ btop install failed, skip"
 
+# 0.3 复制 pkg 命令并恢复已安装的包
+if [ -f "$HOME/.devcontainers/scripts/pkg-manager.sh" ]; then
+  cp "$HOME/.devcontainers/scripts/pkg-manager.sh" /usr/local/bin/pkg
+  chmod +x /usr/local/bin/pkg
+  echo "📦 Restoring user packages..."
+  pkg restore 2>/dev/null || true
+fi
+
 # 1. 检测包管理器并安装依赖
 echo "📦 Setting up package manager..."
 if [ -f "pnpm-lock.yaml" ]; then
