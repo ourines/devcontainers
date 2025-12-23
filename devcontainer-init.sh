@@ -68,6 +68,19 @@ echo "🚀 初始化 devcontainer 配置..."
 echo "   语言: $LANG"
 echo "   数据库: ${WITH_DB:-none}"
 
+# 检查是否已存在配置
+if [ -d ".devcontainer" ]; then
+  echo ""
+  echo "⚠️  发现已有 .devcontainer/ 配置"
+  read -p "   覆盖现有配置? [y/N] " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "   取消操作"
+    exit 0
+  fi
+  echo "   将覆盖现有配置..."
+fi
+
 # 检查 jq
 if ! command -v jq &> /dev/null; then
   echo "❌ 需要安装 jq"
